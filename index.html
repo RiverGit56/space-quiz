@@ -309,6 +309,97 @@
       transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    .countdown-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 48px;
+      margin: -12px 0 14px;
+    }
+
+    .countdown-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .countdown-toggle input {
+      width: 15px;
+      height: 15px;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+
+    .countdown-toggle:focus-within {
+      outline: 2px solid #6366f1;
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+
+    .countdown-timer {
+      --timer-progress: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: conic-gradient(currentColor var(--timer-progress), var(--progress-bg) 0);
+      color: #10b981;
+      font-feature-settings: "tnum";
+    }
+
+    .countdown-timer[hidden] {
+      display: none;
+    }
+
+    .countdown-timer::before {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: var(--card-bg);
+    }
+
+    .countdown-value,
+    .countdown-unit {
+      position: relative;
+      z-index: 1;
+    }
+
+    .countdown-value {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .countdown-unit {
+      margin-top: 2px;
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1;
+    }
+
+    .countdown-timer.warning {
+      color: #f59e0b;
+    }
+
+    .countdown-timer.urgent {
+      color: #ef4444;
+      animation: countdownPulse 0.7s ease-in-out infinite alternate;
+    }
+
+    @keyframes countdownPulse {
+      to { filter: drop-shadow(0 0 5px currentColor); }
+    }
+
     .question-box {
       margin-bottom: 20px;
     }
@@ -644,6 +735,17 @@
           <div id="progressBar" class="progress-bar-fill"></div>
         </div>
 
+        <div class="countdown-controls">
+          <label class="countdown-toggle">
+            <input id="countdownToggle" type="checkbox">
+            <span>⚡ Countdown Mode</span>
+          </label>
+          <div id="countdownTimer" class="countdown-timer" role="timer" aria-label="Time remaining" hidden>
+            <span id="countdownValue" class="countdown-value">15</span>
+            <span class="countdown-unit">SEC</span>
+          </div>
+        </div>
+
         <!-- Question text -->
         <div class="question-box">
           <div id="questionText" class="question-text">Loading question...</div>
@@ -746,6 +848,10 @@
     let score = 0;
     let answered = false;
     let autoAdvanceTimer = null;
+    let countdownInterval = null;
+    let countdownDeadline = 0;
+    let countdownEnabled = false;
+    const COUNTDOWN_SECONDS = 15;
 
     // DOM Elements
     const quizScreen = document.getElementById("quizScreen");
@@ -759,6 +865,9 @@
     const feedbackText = document.getElementById("feedbackText");
     const nextBtn = document.getElementById("nextBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const countdownToggle = document.getElementById("countdownToggle");
+    const countdownTimer = document.getElementById("countdownTimer");
+    const countdownValue = document.getElementById("countdownValue");
 
     // Results elements
     const resultEmoji = document.getElementById("resultEmoji");
@@ -804,6 +913,7 @@
     });
 
     function startQuiz() {
+      stopCountdown();
       currentQuestionIndex = 0;
       score = 0;
       answered = false;
@@ -815,10 +925,12 @@
 
     function loadQuestion() {
       answered = false;
+      stopCountdown();
       clearTimeout(autoAdvanceTimer);
       feedbackBanner.classList.remove("visible");
       feedbackText.textContent = "";
       nextBtn.style.visibility = "hidden";
+      countdownTimer.hidden = !countdownEnabled;
 
       const q = questions[currentQuestionIndex];
       const currentNumber = currentQuestionIndex + 1;
@@ -847,11 +959,14 @@
         btn.addEventListener("click", () => selectOption(index, btn));
         optionsList.appendChild(btn);
       });
+
+      if (countdownEnabled) startCountdown();
     }
 
     function selectOption(selectedIndex, selectedBtn) {
       if (answered) return;
       answered = true;
+      stopCountdown();
 
       const q = questions[currentQuestionIndex];
       const isCorrect = selectedIndex === q.answerIndex;
@@ -860,7 +975,7 @@
       // Disable all options
       allOptionBtns.forEach(btn => btn.disabled = true);
 
-      if (isCorrect) {
+      if (selectedBtn && isCorrect) {
         score++;
         scoreBadge.textContent = `Score: ${score}`;
         selectedBtn.classList.add("correct");
@@ -869,8 +984,10 @@
         feedbackText.textContent = "✨ Correct! Stellar navigation.";
         feedbackText.className = "feedback-text correct";
       } else {
-        selectedBtn.classList.add("wrong");
-        selectedBtn.querySelector(".option-icon").textContent = "✕";
+        if (selectedBtn) {
+          selectedBtn.classList.add("wrong");
+          selectedBtn.querySelector(".option-icon").textContent = "✕";
+        }
 
         // Highlight correct answer
         const correctBtn = allOptionBtns[q.answerIndex];
@@ -879,7 +996,9 @@
           correctBtn.querySelector(".option-icon").textContent = "✓";
         }
 
-        feedbackText.textContent = `🚨 Incorrect. Answer: ${q.options[q.answerIndex]}`;
+        feedbackText.textContent = selectedBtn
+          ? `🚨 Incorrect. Answer: ${q.options[q.answerIndex]}`
+          : `⏱ Time expired! Answer: ${q.options[q.answerIndex]}`;
         feedbackText.className = "feedback-text wrong";
       }
 
@@ -892,8 +1011,45 @@
       }, 1800);
     }
 
+    function stopCountdown() {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+
+    function startCountdown() {
+      stopCountdown();
+      countdownDeadline = Date.now() + COUNTDOWN_SECONDS * 1000;
+      let lastDisplayedSecond = null;
+
+      const updateCountdown = () => {
+        const remainingMs = Math.max(0, countdownDeadline - Date.now());
+        const secondsRemaining = Math.ceil(remainingMs / 1000);
+        countdownTimer.style.setProperty(
+          "--timer-progress",
+          `${(remainingMs / (COUNTDOWN_SECONDS * 1000)) * 100}%`
+        );
+        if (secondsRemaining !== lastDisplayedSecond) {
+          countdownValue.textContent = secondsRemaining;
+          lastDisplayedSecond = secondsRemaining;
+        }
+
+        countdownTimer.classList.toggle("warning", secondsRemaining <= 5 && secondsRemaining > 3);
+        countdownTimer.classList.toggle("urgent", secondsRemaining <= 3);
+
+        if (remainingMs === 0) {
+          stopCountdown();
+          selectOption(null, null);
+        }
+      };
+
+      countdownTimer.hidden = false;
+      updateCountdown();
+      if (!answered) countdownInterval = setInterval(updateCountdown, 100);
+    }
+
     function nextQuestion() {
       clearTimeout(autoAdvanceTimer);
+      stopCountdown();
       if (currentQuestionIndex < questions.length - 1) {
         currentQuestionIndex++;
         loadQuestion();
@@ -903,6 +1059,7 @@
     }
 
     function showResults() {
+      stopCountdown();
       quizScreen.style.display = "none";
       resultsScreen.style.display = "block";
 
@@ -938,6 +1095,12 @@
 
     nextBtn.addEventListener("click", nextQuestion);
     restartBtn.addEventListener("click", startQuiz);
+    countdownToggle.addEventListener("change", () => {
+      countdownEnabled = countdownToggle.checked;
+      stopCountdown();
+      countdownTimer.hidden = !countdownEnabled;
+      if (countdownEnabled && !answered) startCountdown();
+    });
 
     // Global keyboard navigation: 1-4 or A-D to select options, Enter / Space for Next or Restart
     window.addEventListener("keydown", (e) => {
