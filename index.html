@@ -543,11 +543,11 @@
     }
 
     .feedback-banner {
-      min-height: 42px;
+      min-height: 160px;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: space-between;
-      gap: 8px;
+      gap: 12px;
       font-size: 13px;
       opacity: 0;
       visibility: hidden;
@@ -561,7 +561,16 @@
       transform: translateY(0);
     }
 
+    .feedback-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+    }
+
     .feedback-text {
+      display: block;
+      min-height: 42px;
       font-weight: 600;
     }
 
@@ -571,6 +580,39 @@
 
     .feedback-text.wrong {
       color: #ef4444;
+    }
+
+    .mission-fact {
+      min-height: 92px;
+      padding: 10px 12px;
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      background: var(--option-bg);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px);
+      transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s ease;
+    }
+
+    .feedback-banner.visible .mission-fact {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .mission-fact-label {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mission-fact-text {
+      color: var(--text-main);
+      line-height: 1.45;
     }
 
     .action-btn {
@@ -587,6 +629,19 @@
       align-items: center;
       gap: 6px;
       transition: background 0.18s, transform 0.15s;
+    }
+
+    .feedback-banner .action-btn {
+      align-self: flex-end;
+      flex-shrink: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .feedback-banner,
+      .mission-fact {
+        transform: none;
+        transition: none;
+      }
     }
 
     .action-btn:hover {
@@ -756,7 +811,13 @@
 
         <!-- Feedback & next button -->
         <div id="feedbackBanner" class="feedback-banner">
-          <span id="feedbackText" class="feedback-text"></span>
+          <div class="feedback-content" role="status" aria-live="polite" aria-atomic="true">
+            <span id="feedbackText" class="feedback-text"></span>
+            <div id="missionFact" class="mission-fact">
+              <span class="mission-fact-label">Mission Debrief</span>
+              <p id="missionFactText" class="mission-fact-text"></p>
+            </div>
+          </div>
           <button id="nextBtn" class="action-btn">Next ➔</button>
         </div>
       </div>
@@ -795,59 +856,68 @@
       {
         question: "Who was the first human to travel into outer space in 1961?",
         options: ["Neil Armstrong", "Yuri Gagarin", "Alan Shepard", "John Glenn"],
-        answerIndex: 1
+        answerIndex: 1,
+        fact: "Gagarin's Vostok 1 flight lasted 108 minutes and completed one orbit of Earth."
       },
       {
         question: "Which Apollo mission first succeeded in landing astronauts on the Moon?",
         options: ["Apollo 8", "Apollo 11", "Apollo 13", "Apollo 14"],
-        answerIndex: 1
+        answerIndex: 1,
+        fact: "Apollo 11's lunar module Eagle landed in the Sea of Tranquility on July 20, 1969."
       },
       {
         question: "Which NASA rover landed in Jezero Crater on Mars in 2021?",
         options: ["Curiosity", "Opportunity", "Spirit", "Perseverance"],
-        answerIndex: 3
+        answerIndex: 3,
+        fact: "Perseverance carried MOXIE, an experiment that demonstrated making oxygen from Mars's carbon-dioxide-rich atmosphere."
       },
       {
         question: "Launched on Christmas Day 2021, which observatory is Hubble's premier successor?",
         options: ["James Webb Space Telescope", "Kepler Space Telescope", "Spitzer Space Telescope", "Nancy Grace Roman Telescope"],
-        answerIndex: 0
+        answerIndex: 0,
+        fact: "Webb's five-layer sunshield helps keep its infrared instruments cold enough to observe faint, distant objects."
       },
       {
         question: "What was the name of the first artificial satellite, launched into orbit in 1957?",
         options: ["Vanguard 1", "Explorer 1", "Sputnik 1", "Telstar 1"],
-        answerIndex: 2
+        answerIndex: 2,
+        fact: "Sputnik 1 was about the size of a beach ball and transmitted radio signals for 21 days."
       },
       {
         question: "Which spacecraft is currently the farthest human-made object from Earth?",
         options: ["Voyager 1", "Voyager 2", "Pioneer 10", "New Horizons"],
-        answerIndex: 0
+        answerIndex: 0,
+        fact: "Voyager 1 crossed the heliopause in 2012, becoming the first spacecraft to enter interstellar space."
       },
       {
         question: "Who became the first American woman to fly into outer space in 1983?",
         options: ["Mae Jemison", "Sally Ride", "Peggy Whitson", "Christa McAuliffe"],
-        answerIndex: 1
+        answerIndex: 1,
+        fact: "During the STS-7 mission, Sally Ride operated the shuttle's robotic arm to deploy satellites."
       },
       {
         question: "Which dwarf planet was visited by NASA's New Horizons probe in July 2015?",
         options: ["Ceres", "Eris", "Makemake", "Pluto"],
-        answerIndex: 3
+        answerIndex: 3,
+        fact: "New Horizons revealed Pluto's bright, heart-shaped region, informally named Tombaugh Regio."
       },
       {
         question: "ESA's Rosetta mission famously deployed the Philae lander onto which object in 2014?",
         options: ["An asteroid (Bennu)", "A comet (67P/Churyumov–Gerasimenko)", "Jupiter's moon Europa", "Titan"],
-        answerIndex: 1
+        answerIndex: 1,
+        fact: "Philae bounced twice after touchdown before settling in a shaded spot on comet 67P."
       },
       {
         question: "NASA's Artemis program aims to return humans and land the first woman on which world?",
         options: ["Mars", "Venus", "The Moon", "Europa"],
-        answerIndex: 2
+        answerIndex: 2,
+        fact: "Artemis is designed to build experience for longer lunar stays and future human missions to Mars."
       }
     ];
 
     let currentQuestionIndex = 0;
     let score = 0;
     let answered = false;
-    let autoAdvanceTimer = null;
     let countdownInterval = null;
     let countdownDeadline = 0;
     let countdownEnabled = false;
@@ -863,6 +933,7 @@
     const optionsList = document.getElementById("optionsList");
     const feedbackBanner = document.getElementById("feedbackBanner");
     const feedbackText = document.getElementById("feedbackText");
+    const missionFactText = document.getElementById("missionFactText");
     const nextBtn = document.getElementById("nextBtn");
     const restartBtn = document.getElementById("restartBtn");
     const countdownToggle = document.getElementById("countdownToggle");
@@ -926,9 +997,9 @@
     function loadQuestion() {
       answered = false;
       stopCountdown();
-      clearTimeout(autoAdvanceTimer);
       feedbackBanner.classList.remove("visible");
       feedbackText.textContent = "";
+      missionFactText.textContent = "";
       nextBtn.style.visibility = "hidden";
       countdownTimer.hidden = !countdownEnabled;
 
@@ -1002,13 +1073,9 @@
         feedbackText.className = "feedback-text wrong";
       }
 
+      missionFactText.textContent = q.fact;
       nextBtn.style.visibility = "visible";
       feedbackBanner.classList.add("visible");
-
-      // Auto-advance after 1.8 seconds if user doesn't click Next
-      autoAdvanceTimer = setTimeout(() => {
-        nextQuestion();
-      }, 1800);
     }
 
     function stopCountdown() {
@@ -1048,7 +1115,6 @@
     }
 
     function nextQuestion() {
-      clearTimeout(autoAdvanceTimer);
       stopCountdown();
       if (currentQuestionIndex < questions.length - 1) {
         currentQuestionIndex++;
